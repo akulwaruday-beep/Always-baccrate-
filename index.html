@@ -2,57 +2,55 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Baccarat SS Machine Simulator</title>
+<title>Baccarat SS Simulator (Mobile-Friendly)</title>
 <style>
-  body { font-family: Arial, sans-serif; padding: 20px; }
-  input, button { margin: 5px; padding: 5px; }
-  #deckList { margin-top: 10px; }
+  body { font-family: Arial, sans-serif; padding: 10px; }
+  button { margin: 5px; padding: 15px; font-size: 20px; min-width: 50px; }
+  #deckList, #nextCard, #probabilities { margin-top: 10px; font-size: 18px; word-wrap: break-word; }
+  .card-buttons { display: flex; flex-wrap: wrap; justify-content: center; margin: 10px 0; }
+  .control-buttons { display: flex; flex-wrap: wrap; justify-content: center; margin: 10px 0; }
 </style>
 </head>
 <body>
-<h1>Baccarat SS Machine Simulator</h1>
-<label>Enter dealt cards (comma separated, e.g., A,2,3,4,5):</label><br>
-<input type="text" id="dealtCards" size="50">
-<button onclick="loadDeck()">Load Deck</button><br>
-<button onclick="shuffleDeck()">Shuffle (Cut + One Riffle, face-side down)</button>
-<button onclick="dealCard()">Deal Next Card from SS Machine</button>
+<h1>Baccarat SS Simulator</h1>
+<div class="card-buttons">
+  <button onclick="addCard('A')">A</button>
+  <button onclick="addCard('2')">2</button>
+  <button onclick="addCard('3')">3</button>
+  <button onclick="addCard('4')">4</button>
+  <button onclick="addCard('5')">5</button>
+  <button onclick="addCard('6')">6</button>
+  <button onclick="addCard('7')">7</button>
+  <button onclick="addCard('8')">8</button>
+  <button onclick="addCard('9')">9</button>
+  <button onclick="addCard('10')">10</button>
+  <button onclick="addCard('J')">J</button>
+  <button onclick="addCard('Q')">Q</button>
+  <button onclick="addCard('K')">K</button>
+</div>
+<div class="control-buttons">
+  <button onclick="shuffleDeck()">Shuffle (Cut + Riffle)</button>
+  <button onclick="dealCards(5)">Deal Next 5 Cards</button>
+  <button onclick="resetDeck()">Reset Deck</button>
+</div>
 <h2>Deck Info:</h2>
-<div id="deckList">Deck is empty.</div>
-<h2>Next Card from SS Machine (face-side up):</h2>
+<div id="deckList">Empty</div>
+<h2>Next Cards from SS Machine:</h2>
 <div id="nextCard">-</div>
 <h2>Card Probabilities:</h2>
 <div id="probabilities">-</div>
 <script>
-let deck = [];function loadDeck() { const input = document.getElementById('dealtCards').value; if(!input) { alert('Please enter cards'); return; } deck = input.split(',').map(c => c.trim()); document.getElementById('deckList').innerText = 'Current deck: ' + deck.join(', '); document.getElementById('nextCard').innerText = '-'; updateProbabilities(); }
+let deck = [];function addCard(card) { deck.push(card); updateDeckDisplay(); }
 
-function shuffleDeck() { if(deck.length < 2) { alert('Need at least 2 cards to shuffle'); return; }
+function shuffleDeck() { if(deck.length < 2) { alert('Need at least 2 cards'); return; } let mid = Math.floor(deck.length/2); let firstHalf = deck.slice(0, mid); let secondHalf = deck.slice(mid); let shuffled = []; let i = 0; while(i < firstHalf.length || i < secondHalf.length) { if(i < secondHalf.length) shuffled.push(secondHalf[i]); if(i < firstHalf.length) shuffled.push(firstHalf[i]); i++; } deck = shuffled; updateDeckDisplay(); }
 
-// Cut in middle
-let mid = Math.floor(deck.length / 2);
-let firstHalf = deck.slice(0, mid);
-let secondHalf = deck.slice(mid);
+function dealCards(count) { if(deck.length === 0) { alert('Deck is empty'); return; } let dealt = deck.splice(0, count); document.getElementById('nextCard').innerText = dealt.join(', '); updateDeckDisplay(); }
 
-// Riffle shuffle starting from bottom half first (simulates face-side down interleave)
-let shuffled = [];
-let i = 0;
-while(i < firstHalf.length || i < secondHalf.length) {
-    // Introduce small randomness to simulate imperfect shuffle
-    if(i < secondHalf.length) shuffled.push(secondHalf[i]);
-    if(i < firstHalf.length) shuffled.push(firstHalf[i]);
-    i++;
-}
+function resetDeck() { deck = []; document.getElementById('deckList').innerText = 'Empty'; document.getElementById('nextCard').innerText = '-'; document.getElementById('probabilities').innerText = '-'; }
 
-deck = shuffled;
+function updateDeckDisplay() { document.getElementById('deckList').innerText = deck.join(', ') || 'Empty'; updateProbabilities(); }
 
-document.getElementById('deckList').innerText = 'Shuffled deck (now face-side up in machine): ' + deck.join(', ');
-document.getElementById('nextCard').innerText = deck[0];
-updateProbabilities();
-
-}
-
-function dealCard() { if(deck.length === 0) { alert('Deck is empty'); return; } let next = deck.shift(); document.getElementById('nextCard').innerText = next; document.getElementById('deckList').innerText = 'Remaining deck: ' + deck.join(', '); updateProbabilities(); }
-
-function updateProbabilities() { if(deck.length === 0) { document.getElementById('probabilities').innerText = '-'; return; } let counts = {}; deck.forEach(card => { counts[card] = (counts[card] || 0) + 1; }); let probs = []; for(let card in counts) { let percent = ((counts[card]/deck.length)*100).toFixed(1); probs.push(${card}: ${percent}%); } document.getElementById('probabilities').innerText = probs.join(', '); } </script>
+function updateProbabilities() { if(deck.length === 0) { document.getElementById('probabilities').innerText = '-'; return; } let counts = {}; deck.forEach(card => { counts[card] = (counts[card] || 0) + 1; }); let probs = []; for(let card in counts){ let percent = ((counts[card]/deck.length)*100).toFixed(1); probs.push(${card}: ${percent}%); } document.getElementById('probabilities').innerText = probs.join(', '); } </script>
 
 </body>
-</html>
+  </html>
