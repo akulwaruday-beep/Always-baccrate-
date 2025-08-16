@@ -3,60 +3,69 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Baccarat SS Machine Simulator</title>
+<title>Baccarat Card Tracker</title>
 <style>
-  body { font-family: Arial, sans-serif; padding: 10px; }
-  button { margin: 5px; padding: 12px; font-size: 18px; min-width: 60px; margin: 3px; }
-  #deckList, #nextCard, #probabilities, #history { margin-top: 10px; font-size: 16px; word-wrap: break-word; }
+  body { font-family: Arial, sans-serif; padding: 10px; text-align: center; }
+  button { margin: 5px; padding: 12px; font-size: 18px; min-width: 60px; }
+  #deckList, #probabilities, #counts { margin-top: 10px; font-size: 16px; word-wrap: break-word; }
   .card-buttons, .control-buttons { display: flex; flex-wrap: wrap; justify-content: center; margin: 10px 0; }
   h2 { margin-top: 20px; }
+  #history { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 10px; }
+  .history-card {
+    padding: 8px 12px;
+    border: 1px solid #333;
+    border-radius: 6px;
+    background: #f8f8f8;
+    font-size: 18px;
+    font-weight: bold;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+  }
+  #counts { margin-top: 15px; font-weight: bold; }
 </style>
 </head>
 <body>
 <h1>Baccarat SS Machine Simulator</h1>
 
 <div class="control-buttons">
-  <button onclick="initializeMachine()">Initialize Machine</button>
+  <button onclick="initializeDeck()">Start New 52 Card Deck</button>
   <button onclick="shuffleDeck()">Shuffle (Riffle Style)</button>
-  <button onclick="dealCards(5)">Deal Next 5 Cards</button>
   <button onclick="shuffleBack()">Shuffle Back (Insert History)</button>
   <button onclick="resetDeck()">Reset</button>
 </div>
 
+<h2>Deal a Card:</h2>
+<div class="card-buttons" id="cardButtons"></div>
+
 <h2>Deck Info:</h2>
 <div id="deckList">Empty</div>
-
-<h2>Next Cards:</h2>
-<div id="nextCard">-</div>
 
 <h2>Card Probabilities:</h2>
 <div id="probabilities">-</div>
 
-<h2>History (Dealt Cards):</h2>
+<h2>History (Tapped Cards):</h2>
 <div id="history">-</div>
+
+<h2>Remaining Card Counts:</h2>
+<div id="counts">-</div>
 
 <script>
 let deck = [];
 let history = [];
 
-// Initialize full 8-deck shoe
-function initializeMachine() {
+function initializeDeck() {
   deck = [];
   history = [];
   const cards = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
-  for (let d = 0; d < 8; d++) { // 8 decks
-    cards.forEach(c => {
-      for (let i = 0; i < 4; i++) { // 4 suits
-        deck.push(c);
-      }
-    });
-  }
+  cards.forEach(c => {
+    for (let i = 0; i < 4; i++) { // 4 suits
+      deck.push(c);
+    }
+  });
   updateDeckDisplay();
-  document.getElementById("history").innerText = "-";
-  document.getElementById("nextCard").innerText = "-";
+  updateHistoryDisplay();
 }
 
-// Simple riffle shuffle
+// Riffle shuffle
 function shuffleDeck() {
   if (deck.length < 2) return;
   let mid = Math.floor(deck.length / 2);
@@ -71,30 +80,32 @@ function shuffleDeck() {
   updateDeckDisplay();
 }
 
-// Deal cards
-function dealCards(count) {
-  if (deck.length === 0) return alert("Deck empty!");
-  let dealt = deck.splice(0, count);
-  document.getElementById("nextCard").innerText = dealt.join(", ");
-  history = history.concat(dealt);
-  document.getElementById("history").innerText = history.join(", ");
+// Deal a chosen card
+function dealCard(card) {
+  let index = deck.indexOf(card);
+  if (index === -1) {
+    alert(`No ${card} left in deck!`);
+    return;
+  }
+  let dealt = deck.splice(index, 1)[0];
+  history.push(dealt);
+  updateHistoryDisplay();
   updateDeckDisplay();
 }
 
-// Shuffle back history into middle of deck
+// Shuffle back history into middle
 function shuffleBack() {
   if (history.length === 0) return alert("No history to shuffle back!");
   let mid = Math.floor(deck.length / 2);
   let before = deck.slice(0, mid);
   let after = deck.slice(mid);
-  // Randomly interleave history
   while (history.length) {
     let card = history.shift();
     if (Math.random() > 0.5) before.push(card); else after.unshift(card);
   }
   deck = before.concat(after);
-  document.getElementById("history").innerText = "-";
   updateDeckDisplay();
+  updateHistoryDisplay();
 }
 
 // Reset everything
@@ -102,15 +113,29 @@ function resetDeck() {
   deck = [];
   history = [];
   document.getElementById("deckList").innerText = "Empty";
-  document.getElementById("nextCard").innerText = "-";
   document.getElementById("probabilities").innerText = "-";
   document.getElementById("history").innerText = "-";
+  document.getElementById("counts").innerText = "-";
 }
 
 // Update deck + probabilities
 function updateDeckDisplay() {
   document.getElementById("deckList").innerText = deck.join(", ") || "Empty";
   updateProbabilities();
+  updateCounts();
+}
+
+// Show tapped cards history
+function updateHistoryDisplay() {
+  const container = document.getElementById("history");
+  if (history.length === 0) { container.innerHTML = "-"; return; }
+  container.innerHTML = "";
+  history.forEach(c => {
+    let div = document.createElement("div");
+    div.className = "history-card";
+    div.innerText = c;
+    container.appendChild(div);
+  });
 }
 
 // Calculate probabilities
@@ -128,6 +153,35 @@ function updateProbabilities() {
   }
   document.getElementById("probabilities").innerText = probs.join(", ");
 }
+
+// Count remaining cards
+function updateCounts() {
+  if (deck.length === 0) {
+    document.getElementById("counts").innerText = "-";
+    return;
+  }
+  let counts = {};
+  deck.forEach(card => { counts[card] = (counts[card] || 0) + 1; });
+  let summary = [];
+  const order = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+  order.forEach(c => {
+    summary.push(`${c}=${counts[c] || 0}`);
+  });
+  document.getElementById("counts").innerText = summary.join(", ");
+}
+
+// Build card buttons once
+function buildCardButtons() {
+  const container = document.getElementById("cardButtons");
+  const cards = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+  cards.forEach(c => {
+    let btn = document.createElement("button");
+    btn.innerText = c;
+    btn.onclick = () => dealCard(c);
+    container.appendChild(btn);
+  });
+}
+buildCardButtons();
 </script>
 </body>
 </html>
